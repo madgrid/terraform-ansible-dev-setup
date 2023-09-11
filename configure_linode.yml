@@ -1,0 +1,56 @@
+---
+- name: Configure Linode Server
+  hosts: your_server_ip
+  become: yes
+  gather_facts: yes
+  tasks:
+    # Create a new user with password
+    - name: Create user
+      user:
+        name: your_username
+        password: "{{ 'your_password' | password_hash('sha512') }}"
+        groups: sudo
+        shell: /bin/bash
+      become: yes
+
+    # Install Git and Vim
+    - name: Install Git and Vim
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - git
+        - vim
+      become: yes
+
+    # Copy SSH keys to the new user's home directory
+    - name: Copy SSH keys
+      copy:
+        src: "{{ item }}"
+        dest: "/home/your_username/.ssh/{{ item | basename }}"
+        owner: your_username
+        group: your_username
+        mode: "0600"
+      with_items:
+        - /path/to/your/local/.ssh/id_rsa
+        - /path/to/your/local/.ssh/id_ed25519
+      become: yes
+      become_user: your_username
+
+    # Create a Git repository folder
+    - name: Create Git repository folder
+      file:
+        path: /home/your_username/Repo
+        state: directory
+        owner: your_username
+        group: your_username
+
+    # Clone a Git repository
+    - name: Clone Git repository
+      git:
+        repo: https://github.com/your_username/your_repo.git
+        dest: /home/your_username/Repo/your_repo
+        update: yes
+      become: yes
+      become_user: your_username
+
